@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login</title>
+
+<style>
+    /* --- Body --- */
+    body {
+        margin: 0;
+        height: 100vh;
+        background: #000;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* --- Login Box --- */
+    .box {
+        background: linear-gradient(145deg, #0d0d0d, #141414);
+        padding: 40px 35px;
+        width: 360px;
+        border-radius: 16px;
+        box-shadow: 0 0 35px rgba(0,0,0,0.6), 0 0 10px rgba(255,255,255,0.05);
+        text-align: center;
+        position: relative;
+    }
+
+    h2 {
+        margin-bottom: 25px;
+        font-weight: 400;
+        letter-spacing: 1px;
+        font-size: 1.6rem;
+    }
+
+    /* --- Inputs & Buttons --- */
+    input, button {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border: none;
+        box-sizing: border-box;
+        font-size: 1rem;
+        display: block;
+    }
+
+    input {
+        background: #1f1f1f;
+        color: #fff;
+    }
+
+    input::placeholder {
+        color: #bbb;
+        opacity: 0.7;
+    }
+
+    button {
+        background: #0f62fe;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #3b82ff;
+        transform: translateY(-1px);
+    }
+
+    .link-btn {
+        background: none;
+        border: none;
+        margin-top: 8px;
+        font-size: 0.9rem;
+        color: #888;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .link-btn:hover {
+        color: #aaa;
+    }
+
+    /* --- Message --- */
+    #message {
+        margin-top: 15px;
+        font-size: 0.9rem;
+        color: #ff6666;
+        min-height: 18px;
+    }
+
+    /* --- Email Reset Box --- */
+    #emailBox {
+        display: none;
+        margin-top: 10px;
+    }
+
+    /* --- Build Number --- */
+    .build {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 0.7rem;
+        color: #555;
+    }
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Secure Login</h2>
+
+    <div id="loginBox">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Log In</button>
+        <button class="link-btn" onclick="showForgot()">Forgot password?</button>
+        <div id="message"></div>
+    </div>
+
+    <div id="emailBox">
+        <input type="email" id="emailInput" placeholder="Enter your email">
+        <button onclick="sendReset()">Send Reset Link</button>
+        <button class="link-btn" onclick="backToLogin()">Back to login</button>
+    </div>
+
+    <div class="build">Build 2.18</div>
+</div>
+
+<script>
+    // --- Mock Credentials ---
+    const CORRECT_USER = "user";
+    const CORRECT_PASS = "0000";
+    const MAX_ATTEMPTS = 4;
+
+    function updateLockUI() {
+        const locked = localStorage.getItem("locked") === "true";
+        const loginBtn = document.querySelector("#loginBox button");
+        if (locked) {
+            document.getElementById("message").innerText = "⛔ Login is locked due to too many attempts.";
+            loginBtn.disabled = true;
+            loginBtn.style.background = "#444";
+        } else {
+            loginBtn.disabled = false;
+            loginBtn.style.background = "#0f62fe";
+        }
+    }
+
+    updateLockUI();
+
+    function login() {
+        const locked = localStorage.getItem("locked") === "true";
+        if (locked) return;
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        let attempts = Number(localStorage.getItem("loginAttempts") || 0);
+
+        if (username === CORRECT_USER && password === CORRECT_PASS) {
+            localStorage.removeItem("loginAttempts");
+            window.location.href = "https://about.me/kobusliebenberg";
+            return;
+        }
+
+        attempts++;
+        localStorage.setItem("loginAttempts", attempts);
+
+        if (attempts >= MAX_ATTEMPTS) {
+            localStorage.setItem("locked", "true");
+            updateLockUI();
+        } else {
+            document.getElementById("message").innerText = 
+                `Incorrect credentials. Attempts left: ${MAX_ATTEMPTS - attempts}`;
+        }
+    }
+
+    function showForgot() {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("emailBox").style.display = "block";
+        document.getElementById("message").innerText = "";
+    }
+
+    function backToLogin() {
+        document.getElementById("emailBox").style.display = "none";
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("message").innerText = "";
+    }
+
+    function sendReset() {
+        const email = document.getElementById("emailInput").value.trim();
+        if (!email || email.length < 3) {
+            alert("Please enter a valid email.");
+            return;
+        }
+        alert("If your email is in our database, a password reset link has been sent. Please check your inbox.");
+        document.getElementById("emailInput").value = "";
+        backToLogin();
+    }
+
+    // --- Secret Keybind: Ctrl + Spacebar to clear localStorage ---
+    document.addEventListener("keydown", function(e) {
+        if (e.ctrlKey && e.code === "Space") {
+            localStorage.removeItem("loginAttempts");
+            localStorage.removeItem("locked");
+            updateLockUI();
+            const msg = document.getElementById("message");
+            msg.style.color = "#4ef54e"; // green for cleared
+            msg.innerText = "✅ Cleared";
+            setTimeout(() => {
+                msg.innerText = "";
+                msg.style.color = "#ff6666"; // reset color
+            }, 2000);
+        }
+    });
+</script>
+
+</body>
+</html>
